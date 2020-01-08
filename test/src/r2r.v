@@ -622,21 +622,23 @@ fn (r2r mut R2R) load_asm_tests(testpath string) {
 
 fn (r2r mut R2R) run_unit_tests() bool {
 	wd := os.getwd()
-	_ = os.system('make -C ${r2r.r2r_home}/unit')
+	_ = os.system('make -C ${r2r.r2r_home}/unit') // TODO: rewrite in V instead of depending on a makefile
 	unit_path := '${r2r.db_path}/../../unit/bin'
+	unit_home := '${r2r.db_path}/../..'
 	if !os.is_dir(unit_path) {
 		eprintln('Cannot open unit_path')
 		return false
 	}
-	os.chdir(unit_path)
+	os.chdir(unit_home)
 	println('[r2r] Running unit tests from ${unit_path}')
-	files := os.ls('.') or {
+	files := os.ls(unit_path) or {
 		return false
 	}
 	for file in files {
-		if is_executable(file) {
+		fpath := filepath.join(unit_path, file)
+		if is_executable(fpath, file) {
 			// TODO: filter OK
-			cmd := if r2r.show_quiet { '(./$file ;echo \$? > .a) | grep -v OK || [ "\$(shell cat .a)" = 0 ]' } else { './$file' }
+			cmd := if r2r.show_quiet { '(${fpath} ;echo \$? > .a) | grep -v OK || [ "\$(shell cat .a)" = 0 ]' } else { '$fpath' }
 			if os.system(cmd) == 0 {
 				r2r.success++
 			}
@@ -649,14 +651,14 @@ fn (r2r mut R2R) run_unit_tests() bool {
 	return true
 }
 
-fn is_executable(f string) bool {
-	if f.starts_with('r2-') {
+fn is_executable(abspath, filename string) bool {
+	if filename.starts_with('r2-') {
 		return false
 	}
-	if os.is_dir(f) {
+	if os.is_dir(abspath) {
 		return false
 	}
-	return true
+	return os.is_executable(abspath)
 }
 
 fn (r2r mut R2R) run_asm_tests() {

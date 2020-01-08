@@ -72,7 +72,7 @@ uninstall:
 	#rm -f $(BINDIR)/r2r
 	#rm -f $(BINDIR)/r2-v
 
-unit unit_tests: bins
+unit unit_tests: bins src/r2r
 	src/r2r unit
 
 .PHONY: all clean unit install uninstall
